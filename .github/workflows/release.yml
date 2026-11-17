@@ -1,6 +1,12 @@
 name: Release
 
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag to build'
+        required: true
+        type: string
   push:
     tags:
       - 'v*'
@@ -16,10 +22,16 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ github.ref_name }}
+      VERSION: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Validate release tag
+        shell: bash
+        run: '[[ "$VERSION" =~ ^v[0-9][0-9A-Za-z._-]{0,63}$ ]]'
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -36,7 +48,7 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         env:
-          VITE_APP_VERSION: ${{ github.ref_name }}
+          VITE_APP_VERSION: ${{ env.VERSION }}
         run: |
           npm ci
           npm run build
@@ -92,6 +104,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.VERSION }}
           generate_release_notes: true
           files: |
             dist/*.tar.gz
