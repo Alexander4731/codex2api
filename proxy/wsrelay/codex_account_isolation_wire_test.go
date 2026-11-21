@@ -26,7 +26,8 @@ func TestOfficialWireWebsocketLoginIsolation(t *testing.T) {
 	t.Cleanup(func() { proxy.ApplyRuntimeSettings(old) })
 	settings := old
 	settings.ClientCompatMode = proxy.ClientCompatModeForce
-	settings.CodexSyncedCLIVersion = "0.169.0"
+	const syncedVersion = "0.171.0"
+	settings.CodexSyncedCLIVersion = syncedVersion
 	proxy.ApplyRuntimeSettings(settings)
 	previous := proxy.GetResinConfig()
 	t.Cleanup(func() { proxy.SetResinConfig(previous) })
@@ -86,7 +87,7 @@ func TestOfficialWireWebsocketLoginIsolation(t *testing.T) {
 				if gjson.GetBytes(frame.body, "client_metadata.x-codex-installation-id").String() != want {
 					t.Fatal("login installation ID leaked across callers/accounts")
 				}
-				if frame.headers.Get("Version") != "0.169.0" || frame.headers.Get("Originator") != "codex-tui" || frame.headers.Get("X-Codex-Installation-Id") != "" || frame.headers.Get("X-Oai-Attestation") != "" {
+				if frame.headers.Get("Version") != syncedVersion || frame.headers.Get("Originator") != "codex-tui" || frame.headers.Get("X-Codex-Installation-Id") != "" || frame.headers.Get("X-Oai-Attestation") != "" {
 					t.Fatal("unexpected handshake identity")
 				}
 				if gjson.GetBytes(frame.body, "client_metadata.thread_id").String() != frame.headers.Get("Thread-Id") {
